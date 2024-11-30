@@ -1,38 +1,20 @@
-import { useQuery } from "@tanstack/react-query";
-import React from "react";
-import { Navigate, Outlet } from "react-router-dom";
-import api from "../library/axiosConfig";
+import { Session } from "@supabase/supabase-js";
+import { Navigate, useLocation } from "react-router-dom";
 
-const ProtectedRoute: React.FC = () => {
-  const {
-    data: user,
-    isLoading,
-    isError,
-  } = useQuery({
-    queryKey: ["currentUser"],
-    queryFn: async () => {
-      try {
-        const response = await api.get("/auth/me", {
-          withCredentials: true,
-        });
-        console.log("---", response.status);
-        return response.data;
-      } catch (error) {
-        throw new Error("Not authenticated");
-      }
-    },
-    retry: false,
-  });
+interface ProtectedRouteProps {
+  session: Session | null;
+  children: React.ReactNode;
+}
 
-  if (isLoading) {
-    return <div>Loading...</div>; // Or a Mantine Loader
+function ProtectedRoute({ session, children }: ProtectedRouteProps) {
+  const location = useLocation();
+
+  if (!session) {
+    // Redirect to sign-in, but save the attempted URL
+    return <Navigate to="/login" state={{ from: location }} replace />;
   }
 
-  if (isError) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return <Outlet context={user} />;
-};
+  return <>{children}</>;
+}
 
 export default ProtectedRoute;
